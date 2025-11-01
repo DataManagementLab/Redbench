@@ -277,7 +277,7 @@ class Benchmark(ABC):
                 scanset = self._extract_scanset_from_profile(json.loads(profile))
 
             except Exception:
-                log(f"Failed to process query {filepath}. Skipping.", log_mode="error")
+                log(f"Failed to process query \"{filepath}\". Skipping.", log_mode="error")
                 failed.add(template)
                 continue
 

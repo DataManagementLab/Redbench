@@ -29,7 +29,7 @@ def download_artifacts(
             "/"
         )  # Remove leading slash for local path compatibility
 
-        if file_path.startswith("generation-based") and file_path.endswith(".zip"):
+        if file_path.startswith("example_databases") and file_path.endswith(".zip"):
             # make sure the file is in the support database list
             db_name = file_path.split("/")[1].replace(".zip", "")
             if db_name not in databases:
@@ -37,7 +37,7 @@ def download_artifacts(
                 #     f"Skipping {file_path} as it is not in the support database list: {databases}"
                 # )
                 continue
-        elif file_path.startswith("generation-based") and not file_path.endswith(
+        elif file_path.startswith("example_databases") and not file_path.endswith(
             ".zip"
         ):
             # extract the folder name
@@ -48,8 +48,8 @@ def download_artifacts(
                 # )
                 continue
 
-        # apply renaming from generation-based to tmp_generation
-        file_path = file_path.replace("generation-based", "tmp_generation")
+        # apply renaming from example_databases to tmp_generation
+        file_path = file_path.replace("example_databases", "tmp_generation")
 
         # construct the target file path
         target_file_path = os.path.join(output_path, file_path)

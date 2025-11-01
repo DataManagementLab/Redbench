@@ -138,7 +138,7 @@ def create_plots(
         log(f"Could not plot arrival time by query type: {e}")
 
     try:
-        artifacts_dict = {instance_id: {database_id: {"gen_strategy": (None, wl_df)}}}
+        artifacts_dict = {instance_id: {database_id: {gen_strategy: (None, wl_df)}}}
         plot_read_write_timeline(
             artifacts_dict=artifacts_dict,
             plot_dir=plot_dir,

@@ -84,11 +84,9 @@ Example datasets and plots are provided for quick evaluation.
    ```
    Point the output dir to the path you have downloaded the artifacts to.
 
-## Additional Plots
-To compare matching and generation based approach, use the following script to generate the plots:
-```sh
-python src/redbench/plots/create_multiplots.py
-```
+## Example: Generated Workloads From Paper Evaluation
+The workloads generated and used in the evaluation section of the paper can be downloaded here: [OSF](https://osf.io/fgny3/files).
+
 
 ## Comparison of Generation Methods
 
