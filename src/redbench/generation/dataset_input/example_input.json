@@ -1,0 +1,76 @@
+    {
+        "name": "accidents",
+        "csv_kwargs": {
+            "sep": "\\t"
+        },
+        "db_load_kwargs": {
+            "postgres": "DELIMITER '\\t' QUOTE '\"' ESCAPE '\\' NULL 'NULL' CSV HEADER;",
+            "redshift": "csv DELIMITER '\\t' QUOTE '\"' NULL AS 'NULL' IGNOREHEADER 1 gzip maxerror as 10"
+        },
+        "relationships": [
+            [
+                "nesreca",
+                [
+                    "upravna_enota"
+                ],
+                "upravna_enota",
+                [
+                    "id_upravna_enota"
+                ]
+            ],
+            [
+                "oseba",
+                [
+                    "upravna_enota"
+                ],
+                "upravna_enota",
+                [
+                    "id_upravna_enota"
+                ]
+            ]
+        ],
+        "table_col_info": {
+            "nesreca": {
+                "id_nesreca": {
+                    "type": "char(6)",
+                    "pk": true
+                },
+                "klas_nesreca": {
+                    "type": "char(1)",
+                    "pk": false
+                },
+                "upravna_enota": {
+                    "type": "char(4)",
+                    "pk": false
+                },
+                "cas_nesreca": {
+                    "type": "varchar(255)",
+                    "pk": false
+                },
+                "naselje_ali_izven": {
+                    "type": "char(1)",
+                    "pk": false
+                }
+            },
+            "oseba": {
+                "id_nesreca": {
+                    "type": "char(6)",
+                    "pk": false
+                },
+                "povzrocitelj_ali_udelezenec": {
+                    "type": "char(1)",
+                    "pk": false
+                }
+            },
+            "upravna_enota": {
+                "id_upravna_enota": {
+                    "type": "char(4)",
+                    "pk": true
+                },
+                "ime_upravna_enota": {
+                    "type": "varchar(255)",
+                    "pk": false
+                }
+            }
+        }
+    }

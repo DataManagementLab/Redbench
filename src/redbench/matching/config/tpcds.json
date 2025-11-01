@@ -1,0 +1,18 @@
+{
+    "support_benchmarks": [
+        {
+            "id": "tpcds",
+            "sf": 1,
+            "name": "TPC-DS 1 GB",
+            "stats_table": "tpcds_stats",
+            "table_ids_table": "tpcds_table_ids",
+            "override": false
+        }
+    ],
+    "start_date": "2024-03-01 00:00:00",
+    "end_date": "2025-03-10 00:00:00",
+    "matching_method": "join",
+    "redset_exclude_tables_never_read": false,
+    "use_table_versioning": false,
+    "limit_redset_rows_read": null
+}
