@@ -34,7 +34,7 @@ class JoinMatchingMethod:
         self.benchmark_stats = benchmark_stats
         self.join_count_to_queries = map_join_count_to_queries(
             benchmark_stats
-        )  # TODO: Why do we need this?
+        ) 
         self.join_count_to_templates = map_join_count_to_templates(benchmark_stats)
         self.template_to_queries = map_template_to_queries(benchmark_stats)
         self.template_to_unused_queries = copy.deepcopy(self.template_to_queries)

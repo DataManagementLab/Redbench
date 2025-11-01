@@ -114,9 +114,6 @@ class ScansetMapper:
 
     @staticmethod
     def _hamming_distance(scanset1, scanset2):  # Hamming distance between both scansets
-        # TODO: Make sure that duplicates are handled properly
-        # E.g. when Redset_scanset [1,2] -> translates to [5, 5] i.e. [5]
-        # its distance to benchmark scanset [5] should be 1, not 0.
         s1, s2 = Counter(scanset1), Counter(scanset2)
         keys = s1.keys() | s2.keys()
         return sum(abs(s1[k] - s2[k]) for k in keys)

@@ -26,7 +26,8 @@ class TPCDSBenchmark(Benchmark):
 
     def _replace_days_with_interval(
         self, sql
-    ):  # TODO: What else? There are still a few failing templates...
+    ): 
+        # few templates are still failing - however most work
         pattern = r"(\d+)\s+days"
         replacement = r"INTERVAL '\1' DAY"
         return re.sub(pattern, replacement, sql, flags=re.IGNORECASE)

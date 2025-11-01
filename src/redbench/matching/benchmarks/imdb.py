@@ -86,7 +86,7 @@ class IMDbBenchmark(Benchmark):
     def _extract_template_from_filepath(self, filepath):
         filepath = filepath.split("imdb/benchmarks/")[
             1
-        ]  # TODO: FIX this hardcoded path
+        ]
         benchmark = filepath.split("/")[0]
         template = filepath.split("/")[1]
         if benchmark == "job":

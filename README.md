@@ -1,10 +1,10 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-g.svg)](LICENSE)
-[![Paper](https://img.shields.io/badge/paper-arXiv-red.svg)]()
 [![uv](https://img.shields.io/badge/dependency%20manager-uv-orange.svg)](https://github.com/astral-sh/uv)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Release](https://img.shields.io/badge/release-1.0-blue.svg)]()
+<!-- [![Paper](https://img.shields.io/badge/paper-arXiv-red.svg)]() -->
 
 # Redbench - Workload Synthesis From Cloud Traces
 <img src="redbench.png" alt="banner" width="600">
@@ -12,7 +12,7 @@
 **A TU Darmstadt & UTN Workload Generator based on Redset**
 
 Sourcecode of the paper *Redbench:  Workload Synthesis From Cloud Traces*
-The sourcecode for the evaluation sections of *Redbench* can be found here [https://github.com/DataManagementLab/Redbench-Eval](https://github.com/DataManagementLab/Redbench-Eval).
+<!-- The sourcecode for the evaluation sections of *Redbench* can be found here [https://github.com/DataManagementLab/Redbench-Eval](https://github.com/DataManagementLab/Redbench-Eval). -->
 
 ## Overview
 Redbench is a flexible workload generator for database benchmarking, supporting both query matching and synthetic workload generation.
@@ -109,6 +109,18 @@ python src/redbench/plots/create_multiplots.py
 |`database_id`          | (optional) Database ID to mimic; auto-selected if not given                                                  | `13`                                |
 |`matching_config_path` | (optional) Config file for matching strategy - for quick tryout a fast config is used if not specified (`fast.json`)                | `matching/config/default.json`       |
 |`generation_config_path`| (optional) Config file for generation strategy  - for quick tryout a fast config is used if not specified (`fast.json`)                                     | `generation/config/default.json`     |
+
+## Configuring Matching & Generation
+Configuration files are located in the following directories:
+- Matching: `src/redbench/matching/config/`
+- Generation: `src/redbench/generation/config/`
+
+For detailed documentation on the tuning parameters, refer to the following resources:
+- [Generation Configuration](./src/redbench/generation/README.md)
+- [Matching Configuration](./src/redbench/matching/README.md)
+
+By default, the `fast.json` configuration is utilized, which prioritizes speed over accuracy for quick trials. The original configuration used in the paper is available in `default.json`.
+
 
 ## Adding a Custom Support Database for the generation-based strategy
 To generate queries on your own database, provide:
