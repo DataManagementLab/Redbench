@@ -12,7 +12,7 @@
 **A TU Darmstadt & UTN Workload Generator based on Redset**
 
 Sourcecode of the paper *Redbench:  Workload Synthesis From Cloud Traces*
-<!-- The sourcecode for the evaluation sections of *Redbench* can be found here [https://github.com/DataManagementLab/Redbench-Eval](https://github.com/DataManagementLab/Redbench-Eval). -->
+The sourcecode for the evaluation sections of *Redbench* can be found here [https://github.com/DataManagementLab/Redbench-Eval](https://github.com/DataManagementLab/Redbench-Eval).
 
 ## Overview
 Redbench is a flexible workload generator for database benchmarking, supporting both query matching and synthetic workload generation.
