@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redbench — Workload Synthesis From Cloud Traces</title>
+<meta name="description" content="Redbench turns real cloud data warehouse traces into runnable SQL workloads, reproducing the query repetition, arrival times and read/write mix that TPC-H and TPC-DS miss. Accepted at VLDB 2026.">
+<meta property="og:title" content="Redbench — Workload Synthesis From Cloud Traces">
+<meta property="og:description" content="A workload generator that turns real cloud traces into realistic SQL query streams. VLDB 2026.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="redbench.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+/* ---------- tokens: light is the base, both dark states override ---------- */
+:root {
+  --ground:      #f5f2ee;
+  --slab:        #ece9e4;
+  --ink:         #22282c;
+  --muted:       #5d6871;
+  --faint:       #8b959d;
+  --rule:        #ddd7d0;
+  --brand:       #b03a34;
+  --brand-deep:  #8c2a25;
+  --data:        #3d7ebf;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --s-1: 0.8125rem;
+  --s0:  1rem;
+  --s1:  1.125rem;
+  --s2:  1.75rem;
+
+  --measure: 62ch;
+  --page: 900px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:     #15181b;
+    --slab:       #21262a;
+    --ink:        #e9e5e0;
+    --muted:      #9aa5af;
+    --faint:      #737e88;
+    --rule:       #2f353b;
+    --brand:      #d96a62;
+    --brand-deep: #e8887f;
+    --data:       #6ba6e0;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:     #15181b;
+  --slab:       #21262a;
+  --ink:        #e9e5e0;
+  --muted:      #9aa5af;
+  --faint:      #737e88;
+  --rule:       #2f353b;
+  --brand:      #d96a62;
+  --brand-deep: #e8887f;
+  --data:       #6ba6e0;
+}
+
+/* ---------- base ---------- */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--s0);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--brand); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--brand-deep); }
+
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: 2px; }
+
+code, pre { font-family: var(--font-mono); }
+h1, h2, h3 { text-wrap: balance; line-height: 1.15; margin: 0; }
+
+.wrap {
+  max-width: var(--page);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--ground) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.topbar .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+}
+.topbar-mark {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  font-size: var(--s-1);
+  color: var(--brand);
+  text-decoration: none;
+}
+.topbar nav { display: flex; flex-wrap: wrap; gap: 22px; font-size: var(--s-1); }
+.topbar nav a { color: var(--muted); text-decoration: none; }
+.topbar nav a:hover { color: var(--ink); }
+
+/* ---------- hero ---------- */
+.hero { padding-block: 60px 46px; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+.eyebrow b { color: var(--brand); font-weight: 600; }
+
+.wordmark {
+  font-size: clamp(2.75rem, 10vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 4px;
+}
+.tagline {
+  font-size: clamp(1.0625rem, 2.6vw, 1.375rem);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 0 0 18px;
+}
+.lede {
+  max-width: var(--measure);
+  font-size: var(--s1);
+  color: var(--muted);
+  margin: 0 0 28px;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--ink);
+  font-size: var(--s-1);
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color .15s, color .15s;
+}
+.btn:hover { border-color: var(--brand); color: var(--brand); }
+.btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
+.btn .arw { font-size: 0.7rem; opacity: .55; }
+
+/* ---------- byline ---------- */
+.byline {
+  margin: 0 0 10px;
+  font-size: var(--s-1);
+  line-height: 1.95;
+  color: var(--ink);
+}
+.byline sup {
+  color: var(--brand);
+  font-size: 0.68em;
+  font-weight: 600;
+  vertical-align: super;
+  line-height: 0;
+}
+.affil {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  margin: 0 0 28px;
+  font-size: var(--s-1);
+  color: var(--faint);
+}
+.affil sup {
+  color: var(--brand);
+  font-size: 0.68em;
+  font-weight: 600;
+  vertical-align: super;
+  line-height: 0;
+  padding-right: 2px;
+}
+
+/* ---------- the bench-slat divider ---------- */
+.slats {
+  border: 0;
+  height: 5px;
+  margin: 0;
+  background:
+    linear-gradient(var(--rule), var(--rule)) top/100% 1px no-repeat,
+    linear-gradient(var(--rule), var(--rule)) bottom/100% 1px no-repeat;
+}
+
+/* ---------- sections ---------- */
+section { padding-block: 46px; }
+
+.sec-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 0 0 10px;
+}
+h2 {
+  font-size: var(--s2);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 16px;
+}
+h3 { font-size: var(--s0); font-weight: 650; }
+section p { max-width: var(--measure); color: var(--muted); }
+section p strong { color: var(--ink); font-weight: 600; }
+
+/* ---------- key/value row, no boxes ---------- */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 24px 32px;
+  margin: 32px 0 0;
+}
+.facts dt {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 4px;
+}
+.facts dd {
+  margin: 0;
+  font-size: var(--s-1);
+  color: var(--muted);
+}
+.facts dd b {
+  display: block;
+  font-size: var(--s1);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- two modes, no boxes ---------- */
+.modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 28px 40px;
+  margin-block: 28px 36px;
+}
+.mode-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+.mode-matching .mode-tag { color: var(--brand); }
+.mode-generation .mode-tag { color: var(--data); }
+.modes h3 { margin-bottom: 6px; }
+.modes p { font-size: var(--s-1); margin: 0; max-width: none; }
+
+/* ---------- table: rules only ---------- */
+.scroll-x { overflow-x: auto; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 560px;
+  font-size: var(--s-1);
+}
+th, td {
+  text-align: left;
+  padding: 11px 20px 11px 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+thead th {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 600;
+  padding-top: 0;
+}
+tbody th { font-weight: 500; color: var(--ink); width: 24%; }
+td { color: var(--muted); }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+
+/* ---------- code ---------- */
+.code { position: relative; margin-top: 24px; }
+
+pre {
+  background: var(--slab);
+  border-radius: 4px;
+  padding: 18px 88px 18px 20px;
+  overflow-x: auto;
+  font-size: var(--s-1);
+  line-height: 1.75;
+  margin: 0;
+  color: var(--ink);
+}
+pre .c { color: var(--faint); }
+
+.copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--slab);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--muted);
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.copy:hover { border-color: var(--brand); color: var(--brand); }
+.copy[data-done] { border-color: var(--brand); color: var(--brand); }
+
+/* ---------- footer ---------- */
+footer {
+  border-top: 1px solid var(--rule);
+  padding-block: 26px 44px;
+  font-size: var(--s-1);
+  color: var(--faint);
+}
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 28px; justify-content: space-between; }
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--brand); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+html { scroll-behavior: smooth; }
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="topbar-mark" href="#top">Redbench</a>
+    <nav>
+      <a href="#about">About</a>
+      <a href="#synthesis">Synthesis</a>
+      <a href="#quickstart">Quickstart</a>
+      <a href="#cite">Cite</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <div class="wrap hero">
+    <p class="eyebrow"><b>VLDB 2026</b> — Experiment, Analysis &amp; Benchmark track</p>
+    <h1 class="wordmark">Redbench</h1>
+    <p class="tagline">Workload Synthesis From Cloud Traces</p>
+
+    <p class="byline">
+      Johannes Wehrstein<sup>1</sup>, Roman Heinrich<sup>1,2</sup>, Mihail Stoian<sup>3</sup>,
+      Skander Krid<sup>4</sup>, Martin Stemmer<sup>1</sup>, Andreas Kipf<sup>3</sup>,
+      Carsten Binnig<sup>1,2,6</sup>, Muhammad El-Hindi<sup>5</sup>
+    </p>
+    <p class="affil">
+      <span><sup>1</sup>TU Darmstadt</span>
+      <span><sup>2</sup>DFKI</span>
+      <span><sup>3</sup>UTN</span>
+      <span><sup>4</sup>Snowflake</span>
+      <span><sup>5</sup>TU Munich</span>
+      <span><sup>6</sup>hessian.AI</span>
+    </p>
+
+    <p class="lede">
+      Real cloud traces look nothing like TPC-H or TPC-DS. Redbench turns them into runnable SQL
+      workloads that keep what standard benchmarks throw away — query repetition, arrival times,
+      and a realistic read/write mix.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="https://arxiv.org/pdf/2511.13059">Paper <span class="arw">↗</span></a>
+      <a class="btn" href="https://github.com/DataManagementLab/Redbench">Code <span class="arw">↗</span></a>
+      <a class="btn" href="https://osf.io/fgny3/files">Workloads <span class="arw">↗</span></a>
+      <a class="btn" href="https://github.com/DataManagementLab/Redbench-Eval">Evaluation <span class="arw">↗</span></a>
+    </div>
+  </div>
+
+  <hr class="slats">
+
+  <section id="about" class="wrap">
+    <p class="sec-label">About</p>
+    <h2>What is Redbench?</h2>
+    <p>
+      Cloud providers have published traces of what their data warehouses actually run. Redbench
+      reads those traces and rebuilds their characteristics on top of a benchmark or schema you
+      already have, turning a static query set into a realistic query stream. It keys on inherent
+      workload signals rather than execution metrics, so the result is reproducible across systems.
+    </p>
+
+    <dl class="facts">
+      <div>
+        <dt>Trace source</dt>
+        <dd><b>Redset</b>Amazon Redshift metadata, 200 instances</dd>
+      </div>
+      <div>
+        <dt>Query types</dt>
+        <dd><b>Read &amp; write</b>SELECT, INSERT, UPDATE, DELETE</dd>
+      </div>
+      <div>
+        <dt>Evaluated on</dt>
+        <dd><b>4 systems</b>commercial cloud data warehouses</dd>
+      </div>
+    </dl>
+  </section>
+
+  <hr class="slats">
+
+  <section id="synthesis" class="wrap">
+    <p class="sec-label">Synthesis</p>
+    <h2>Two ways to build a workload</h2>
+    <p>Run either strategy, or both in sequence — they answer different questions.</p>
+
+    <div class="modes">
+      <div class="mode-matching">
+        <p class="mode-tag">Matching</p>
+        <h3>Reuse queries you already trust</h3>
+        <p>
+          Maps each trace query onto one from an existing benchmark — TPC-DS, JOB, CEB — by join
+          count and scanset, keeping semantics you already understand.
+        </p>
+      </div>
+      <div class="mode-generation">
+        <p class="mode-tag">Generation</p>
+        <h3>Synthesize queries for your schema</h3>
+        <p>
+          Walks a join graph built from your schema and tunes predicate selectivity to hit the
+          trace's bytes-read distribution. Works on any database you supply.
+        </p>
+      </div>
+    </div>
+
+    <div class="scroll-x">
+      <table>
+        <thead>
+          <tr><th scope="col">Criterion</th><th scope="col">Matching</th><th scope="col">Generation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Query types</th>
+            <td>SELECT / simple DML</td>
+            <td>SELECT / INSERT / UPDATE / DELETE</td>
+          </tr>
+          <tr>
+            <th scope="row">Complexity</th>
+            <td>Complex, follows TPC-H / JOB</td>
+            <td>Many joins, simple predicates</td>
+          </tr>
+          <tr>
+            <th scope="row">Repetition</th>
+            <td>Exact</td>
+            <td>Structural &amp; exact</td>
+          </tr>
+          <tr>
+            <th scope="row">Matches Redset on</th>
+            <td>Arrival times, schema, joins</td>
+            <td>Arrival times, schema, joins, bytes read</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="slats">
+
+  <section id="quickstart" class="wrap">
+    <p class="sec-label">Quickstart</p>
+    <h2>Generate a workload</h2>
+    <p>
+      Python via <a href="https://github.com/astral-sh/uv">uv</a>, plus the DuckDB CLI.
+      Configuration and custom schemas are covered in the
+      <a href="https://github.com/DataManagementLab/Redbench#readme">README</a>.
+    </p>
+
+    <div class="code">
+      <button class="copy" type="button" aria-label="Copy the quickstart commands">Copy</button>
+<pre><code>git clone https://github.com/DataManagementLab/Redbench.git
+cd Redbench &amp;&amp; uv sync &amp;&amp; source .venv/bin/activate
+
+<span class="c"># fetch a Redset trace — serverless is the small one</span>
+mkdir data
+aws s3 cp --no-sign-request \
+  s3://redshift-downloads/redset/serverless/full.parquet data/full_serverless.parquet
+
+<span class="c"># synthesize</span>
+python src/redbench/run.py --redset_path data/full_serverless.parquet --output_dir output</code></pre>
+    </div>
+
+    <p style="margin-top:20px">
+      Or skip generation and download the paper's workloads from
+      <a href="https://osf.io/fgny3/files">OSF</a>.
+    </p>
+  </section>
+
+  <hr class="slats">
+
+  <section id="cite" class="wrap">
+    <p class="sec-label">Citation</p>
+    <h2 style="margin-bottom:0">Cite Redbench</h2>
+    <div class="code">
+      <button class="copy" type="button" aria-label="Copy the BibTeX entry">Copy</button>
+<pre><code>@article{wehrstein2025redbench,
+  title   = {Redbench: Workload Synthesis From Cloud Traces},
+  author  = {Wehrstein, Johannes and Heinrich, Roman and Stoian, Mihail and
+             Krid, Skander and Stemmer, Martin and Kipf, Andreas and
+             Binnig, Carsten and El-Hindi, Muhammad},
+  journal = {arXiv preprint arXiv:2511.13059},
+  year    = {2025}
+}</code></pre>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Apache 2.0 · TU Darmstadt, UT Nuremberg</span>
+    <span>
+      <a href="https://arxiv.org/abs/2511.13059">arXiv:2511.13059</a> ·
+      <a href="https://github.com/DataManagementLab/Redbench">GitHub</a> ·
+      <a href="https://github.com/amazon-science/redset">Redset</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  Array.prototype.forEach.call(document.querySelectorAll('.copy'), function (btn) {
+    var idle = btn.textContent;
+
+    function flash(label, ms) {
+      btn.textContent = label;
+      btn.setAttribute('data-done', '');
+      setTimeout(function () {
+        btn.textContent = idle;
+        btn.removeAttribute('data-done');
+      }, ms);
+    }
+
+    btn.addEventListener('click', function () {
+      var text = btn.parentNode.querySelector('pre').innerText;
+      if (!navigator.clipboard) { flash('Select + copy', 2400); return; }
+      navigator.clipboard.writeText(text).then(
+        function () { flash('Copied', 1600); },
+        function () { flash('Select + copy', 2400); }
+      );
+    });
+  });
+</script>
+
+</body>
+</html>
